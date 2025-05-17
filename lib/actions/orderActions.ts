@@ -17,6 +17,45 @@ export type ShippingAddress = {
   phoneNumber?: string;
 };
 
+// Define order summary type for listings
+export type UserOrderSummary = {
+  id: number;
+  created_at: string;
+  total_amount: number;
+  status: string;
+  item_count?: number;
+};
+
+// Define detailed order type with items
+export type OrderDetail = {
+  id: number;
+  user_id: string;
+  status: string;
+  total_amount: number;
+  subtotal: number;
+  shipping_handling_fee: number;
+  shipping_address: string;
+  payment_method: string | null;
+  payment_status: string | null;
+  created_at: string;
+  updated_at: string;
+  stripe_checkout_session_id: string | null;
+  order_items: {
+    id: number;
+    order_id: number;
+    product_id: number;
+    quantity: number;
+    price: number;
+    products: {
+      id: number;
+      name: string;
+      image_url: string | null;
+      description: string | null;
+    } | null;
+  }[];
+  parsed_shipping_address?: ShippingAddress;
+};
+
 // Initialize Stripe with secret key
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2022-11-15', // Use an apiVersion that's compatible with the installed Stripe package
@@ -280,5 +319,107 @@ export async function handleSuccessfulCheckoutSession(
       await supabase.from('orders').update({ status: 'Error - Processing Failed' }).eq('id', orderId);
     }
     return { error: 'An unexpected server error occurred while finalizing your order. Please contact support.', internalError: e.message };
+  }
+}
+
+// Get user orders for dashboard
+export async function getUserOrders(
+  page: number = 1,
+  pageSize: number = 10
+): Promise<{ orders: UserOrderSummary[] | null; error?: string; totalCount: number }> {
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+      return { orders: null, error: 'User not authenticated', totalCount: 0 };
+    }
+
+    const offset = (page - 1) * pageSize;
+
+    // Fetch orders with count
+    const { data: ordersData, error: ordersError, count } = await supabase
+      .from('orders')
+      .select('id, created_at, total_amount, status', { count: 'exact' })
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .range(offset, offset + pageSize - 1);
+
+    if (ordersError) {
+      console.error('Error fetching user orders:', ordersError);
+      return { orders: null, error: `Failed to fetch orders: ${ordersError.message}`, totalCount: 0 };
+    }
+
+    // For each order, get the item count
+    const ordersWithItemCount = await Promise.all(
+      (ordersData || []).map(async (order) => {
+        const { count: itemCount } = await supabase
+          .from('order_items')
+          .select('id', { count: 'exact', head: true })
+          .eq('order_id', order.id);
+
+        return { ...order, item_count: itemCount || 0 };
+      })
+    );
+
+    return { 
+      orders: ordersWithItemCount as UserOrderSummary[], 
+      totalCount: count || 0 
+    };
+  } catch (error: any) {
+    console.error('Error in getUserOrders:', error);
+    return { orders: null, error: error.message, totalCount: 0 };
+  }
+}
+
+// Get detailed order info for a specific order
+export async function getOrderDetailsForUser(
+  orderId: number
+): Promise<{ order: OrderDetail | null; error?: string }> {
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+      return { order: null, error: 'User not authenticated' };
+    }
+
+    // Fetch order with items and product details
+    const { data, error } = await supabase
+      .from('orders')
+      .select(`
+        *,
+        order_items (
+          *,
+          products (id, name, image_url, description)
+        )
+      `)
+      .eq('id', orderId)
+      .eq('user_id', user.id) // Security: ensure user owns this order
+      .single();
+
+    if (error) {
+      console.error(`Error fetching order details for order ${orderId}:`, error);
+      return { order: null, error: `Failed to fetch order details: ${error.message}` };
+    }
+
+    if (!data) {
+      return { order: null, error: 'Order not found or access denied' };
+    }
+
+    // Parse shipping address if it's stored as JSON string
+    let parsedOrder = data as OrderDetail;
+    if (typeof data.shipping_address === 'string') {
+      try {
+        parsedOrder.parsed_shipping_address = JSON.parse(data.shipping_address) as ShippingAddress;
+      } catch (e) {
+        console.error('Failed to parse shipping_address JSON for order', orderId, e);
+      }
+    }
+
+    return { order: parsedOrder };
+  } catch (error: any) {
+    console.error('Error in getOrderDetailsForUser:', error);
+    return { order: null, error: error.message };
   }
 } 

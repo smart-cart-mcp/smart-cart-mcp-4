@@ -1,9 +1,9 @@
 import { getCartItems, getCartTotal } from "@/lib/actions/cartActions";
 import CartItemsList from "@/components/cart/CartItemsList";
-import OrderSummary from "@/components/cart/OrderSummary";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ShoppingBag } from "lucide-react";
+import OrderSummary from "@/components/cart/OrderSummary";
 
 export const metadata = {
   title: "Your Cart | Smart Cart",

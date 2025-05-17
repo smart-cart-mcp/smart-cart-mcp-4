@@ -37,20 +37,45 @@ export const updateSession = async (request: NextRequest) => {
 
     // This will refresh session if expired - required for Server Components
     // https://supabase.com/docs/guides/auth/server-side/nextjs
-    const user = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
-    // protected routes
+    // Get user's role from JWT claims
+    const { 
+      data: { session },
+    } = await supabase.auth.getSession();
+    
+    const userRole = session?.user?.app_metadata?.role || 'user';
+    const isAdmin = userRole === 'admin';
+
+    // protected user routes
     if (
       (request.nextUrl.pathname.startsWith("/protected") || 
+       request.nextUrl.pathname.startsWith("/dashboard") ||
        request.nextUrl.pathname.startsWith("/cart") ||
        request.nextUrl.pathname.startsWith("/checkout")) && 
-      user.error
+      !user
     ) {
       return NextResponse.redirect(new URL("/sign-in", request.url));
     }
+    
+    // protected admin routes
+    if (
+      request.nextUrl.pathname.startsWith("/admin") && 
+      (!user || !isAdmin)
+    ) {
+      // If user is logged in but not admin, redirect to dashboard
+      if (user) {
+        return NextResponse.redirect(new URL("/dashboard", request.url));
+      }
+      // If not logged in, redirect to sign in
+      return NextResponse.redirect(new URL("/sign-in", request.url));
+    }
 
-    if (request.nextUrl.pathname === "/" && !user.error) {
-      return NextResponse.redirect(new URL("/protected", request.url));
+    // If authenticated user visits home, redirect to dashboard
+    if (request.nextUrl.pathname === "/" && user) {
+      return NextResponse.redirect(new URL("/dashboard", request.url));
     }
 
     return response;
@@ -58,6 +83,7 @@ export const updateSession = async (request: NextRequest) => {
     // If you are here, a Supabase client could not be created!
     // This is likely because you have not set up environment variables.
     // Check out http://localhost:3000 for Next Steps.
+    console.error('Error in middleware:', e);
     return NextResponse.next({
       request: {
         headers: request.headers,
@@ -65,3 +91,4 @@ export const updateSession = async (request: NextRequest) => {
     });
   }
 };
+

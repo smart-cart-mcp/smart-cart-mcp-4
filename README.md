@@ -17,20 +17,45 @@
 </p>
 <br/>
 
+# Smart Cart
+
+A comprehensive e-commerce solution built with Next.js, Supabase, and Stripe.
+
 ## Features
 
-- Works across the entire [Next.js](https://nextjs.org) stack
-  - App Router
-  - Pages Router
-  - Middleware
-  - Client
-  - Server
-  - It just works!
-- supabase-ssr. A package to configure Supabase Auth to use cookies
-- Styling with [Tailwind CSS](https://tailwindcss.com)
-- Components with [shadcn/ui](https://ui.shadcn.com/)
-- Optional deployment with [Supabase Vercel Integration and Vercel deploy](#deploy-your-own)
-  - Environment variables automatically assigned to Vercel project
+- Product browsing and searching by categories
+- Secure user authentication
+- Shopping cart functionality
+- Secure checkout with Stripe
+- Order history and tracking
+- Admin dashboard for order management
+
+## Setup
+
+1. Clone this repository
+2. Install dependencies:
+   ```
+   npm install
+   ```
+3. Create a `.env` file based on `.env.example`
+4. Set up Supabase (see [SUPABASE_SETUP.md](SUPABASE_SETUP.md))
+5. Set up Stripe (see [STRIPE_SETUP.md](STRIPE_SETUP.md))
+6. Start the development server:
+   ```
+   npm run dev
+   ```
+
+## Admin Dashboard
+
+Smart Cart includes an admin dashboard for order management, accessible to users with admin privileges. See [ADMIN_SETUP.md](ADMIN_SETUP.md) for setup instructions and details on:
+
+- Setting up admin users
+- Order management workflow
+- Status updates and tracking
+
+## License
+
+MIT
 
 ## Demo
 

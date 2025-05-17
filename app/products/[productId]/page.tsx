@@ -1,9 +1,9 @@
 import { getProductById } from "@/lib/actions/productActions";
-import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import { Product } from "@/lib/database.types";
+import AddToCartForm from "@/components/cart/AddToCartForm";
 
 interface ProductPageProps {
   params: {
@@ -144,13 +144,10 @@ export default async function ProductPage({ params }: ProductPageProps) {
             )}
           </div>
           
-          <Button 
-            size="lg" 
-            className="w-full md:w-auto px-8"
-            disabled={!productWithCategory.in_stock}
-          >
-            Add to Cart
-          </Button>
+          <AddToCartForm 
+            productId={productWithCategory.id} 
+            inStock={productWithCategory.in_stock || false} 
+          />
         </div>
       </div>
     </div>

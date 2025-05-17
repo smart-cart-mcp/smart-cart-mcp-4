@@ -4,8 +4,12 @@ import { Button } from "./ui/button";
 import HeaderAuth from "./header-auth";
 import { ShoppingCart } from "lucide-react";
 import { Badge } from "./ui/badge";
+import { getCartItemCount } from "@/lib/actions/cartActions";
 
-export default function Header() {
+export default async function Header() {
+  // Get cart item count
+  const cartItemCount = await getCartItemCount();
+  
   return (
     <nav className="w-full flex justify-center border-b border-b-foreground/10 h-16">
       <div className="w-full max-w-7xl flex justify-between items-center p-3 px-5">
@@ -29,7 +33,7 @@ export default function Header() {
           <Link href="/cart" className="relative">
             <ShoppingCart className="h-6 w-6" />
             <Badge className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0">
-              0
+              {cartItemCount}
             </Badge>
           </Link>
           <HeaderAuth />

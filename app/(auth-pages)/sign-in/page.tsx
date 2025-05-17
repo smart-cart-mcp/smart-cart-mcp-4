@@ -8,7 +8,7 @@ import Link from "next/link";
 export default async function Login(props: { searchParams: Promise<Message> }) {
   const searchParams = await props.searchParams;
   return (
-    <form className="w-full">
+    <form className="w-full" action={signInAction}>
       <h1 className="text-2xl font-bold mb-2">Welcome Back to Smart Cart</h1>
       <p className="text-sm text-muted-foreground mb-6">
         Sign in to your account to continue your shopping experience
@@ -21,7 +21,7 @@ export default async function Login(props: { searchParams: Promise<Message> }) {
       </p>
       <div className="flex flex-col gap-2 [&>input]:mb-3 mt-8">
         <Label htmlFor="email">Email</Label>
-        <Input name="email" placeholder="you@example.com" required />
+        <Input id="email" name="email" placeholder="you@example.com" required />
         <div className="flex justify-between items-center">
           <Label htmlFor="password">Password</Label>
           <Link
@@ -32,12 +32,13 @@ export default async function Login(props: { searchParams: Promise<Message> }) {
           </Link>
         </div>
         <Input
+          id="password"
           type="password"
           name="password"
           placeholder="Your password"
           required
         />
-        <SubmitButton pendingText="Signing In..." formAction={signInAction}>
+        <SubmitButton pendingText="Signing In...">
           Sign in
         </SubmitButton>
         <FormMessage message={searchParams} />

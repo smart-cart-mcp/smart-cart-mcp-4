@@ -5,9 +5,29 @@ import { createClient } from "@/utils/supabase/server";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
+// Helper function to get form field values accounting for Next.js 15 format changes
+function getFormField(formData: FormData, fieldName: string): string | undefined {
+  // Try direct access first
+  let value = formData.get(fieldName)?.toString();
+  
+  // If not found, try looking for prefixed versions (Next.js 15 form format)
+  if (!value) {
+    // Convert FormData entries to array for compatibility
+    const entries = Array.from(formData.entries());
+    for (const [key, val] of entries) {
+      if (key.endsWith(`_${fieldName}`)) {
+        value = val.toString();
+        break;
+      }
+    }
+  }
+  
+  return value;
+}
+
 export const signUpAction = async (formData: FormData) => {
-  const email = formData.get("email")?.toString();
-  const password = formData.get("password")?.toString();
+  const email = getFormField(formData, "email");
+  const password = getFormField(formData, "password");
   const supabase = await createClient();
   const origin = (await headers()).get("origin");
 
@@ -40,9 +60,17 @@ export const signUpAction = async (formData: FormData) => {
 };
 
 export const signInAction = async (formData: FormData) => {
-  const email = formData.get("email") as string;
-  const password = formData.get("password") as string;
+  const email = getFormField(formData, "email");
+  const password = getFormField(formData, "password");
   const supabase = await createClient();
+
+  if (!email || !password) {
+    return encodedRedirect(
+      "error",
+      "/sign-in",
+      "Email and password are required",
+    );
+  }
 
   const { error } = await supabase.auth.signInWithPassword({
     email,
@@ -57,10 +85,10 @@ export const signInAction = async (formData: FormData) => {
 };
 
 export const forgotPasswordAction = async (formData: FormData) => {
-  const email = formData.get("email")?.toString();
+  const email = getFormField(formData, "email");
   const supabase = await createClient();
   const origin = (await headers()).get("origin");
-  const callbackUrl = formData.get("callbackUrl")?.toString();
+  const callbackUrl = getFormField(formData, "callbackUrl");
 
   if (!email) {
     return encodedRedirect("error", "/forgot-password", "Email is required");
@@ -93,11 +121,11 @@ export const forgotPasswordAction = async (formData: FormData) => {
 export const resetPasswordAction = async (formData: FormData) => {
   const supabase = await createClient();
 
-  const password = formData.get("password") as string;
-  const confirmPassword = formData.get("confirmPassword") as string;
+  const password = getFormField(formData, "password");
+  const confirmPassword = getFormField(formData, "confirmPassword");
 
   if (!password || !confirmPassword) {
-    encodedRedirect(
+    return encodedRedirect(
       "error",
       "/protected/reset-password",
       "Password and confirm password are required",
@@ -105,7 +133,7 @@ export const resetPasswordAction = async (formData: FormData) => {
   }
 
   if (password !== confirmPassword) {
-    encodedRedirect(
+    return encodedRedirect(
       "error",
       "/protected/reset-password",
       "Passwords do not match",
@@ -117,14 +145,14 @@ export const resetPasswordAction = async (formData: FormData) => {
   });
 
   if (error) {
-    encodedRedirect(
+    return encodedRedirect(
       "error",
       "/protected/reset-password",
       "Password update failed",
     );
   }
 
-  encodedRedirect("success", "/protected/reset-password", "Password updated");
+  return encodedRedirect("success", "/protected/reset-password", "Password updated");
 };
 
 export const signOutAction = async () => {

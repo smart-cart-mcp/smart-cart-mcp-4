@@ -20,16 +20,16 @@ export default function Footer() {
             <ul className="space-y-2 text-sm">
               <li><Link href="/" className="hover:underline">Home</Link></li>
               <li><Link href="/categories" className="hover:underline">Browse Categories</Link></li>
-              <li><Link href="#" className="hover:underline">About Us</Link></li>
-              <li><Link href="#" className="hover:underline">Contact</Link></li>
+              <li><Link href="/about" className="hover:underline">About Us</Link></li>
+              <li><Link href="/contact" className="hover:underline">Contact</Link></li>
             </ul>
           </div>
           
           <div>
             <h3 className="text-lg font-semibold mb-4">Legal</h3>
             <ul className="space-y-2 text-sm">
-              <li><Link href="#" className="hover:underline">Privacy Policy</Link></li>
-              <li><Link href="#" className="hover:underline">Terms of Service</Link></li>
+              <li><Link href="/legal/privacy" className="hover:underline">Privacy Policy</Link></li>
+              <li><Link href="/legal/terms" className="hover:underline">Terms of Service</Link></li>
             </ul>
           </div>
         </div>

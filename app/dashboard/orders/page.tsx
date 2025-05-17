@@ -12,11 +12,14 @@ export const metadata = {
 export default async function OrdersPage({
   searchParams,
 }: {
-  searchParams?: { page?: string };
+  searchParams: Promise<{ page?: string }>;
 }) {
+  // Resolve the searchParams Promise
+  const resolvedSearchParams = await searchParams;
+  
   // Get the current page from the URL query parameters
-  const currentPage = searchParams?.page 
-    ? parseInt(searchParams.page, 10)
+  const currentPage = resolvedSearchParams?.page 
+    ? parseInt(resolvedSearchParams.page, 10)
     : 1;
   
   // Fetch orders for the current page

@@ -11,8 +11,11 @@ export const metadata = {
 export default async function CheckoutSuccessPage({
   searchParams,
 }: {
-  searchParams?: { session_id?: string };
+  searchParams: Promise<{ session_id?: string }>;
 }) {
+  // Resolve the searchParams Promise
+  const resolvedSearchParams = await searchParams;
+  
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -20,7 +23,7 @@ export default async function CheckoutSuccessPage({
     redirect('/sign-in?message=Please sign in.');
   }
 
-  const sessionId = searchParams?.session_id;
+  const sessionId = resolvedSearchParams?.session_id;
   if (!sessionId) {
     return (
       <StripeErrorDisplay 

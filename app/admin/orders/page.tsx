@@ -12,18 +12,21 @@ export const metadata = {
 export default async function AdminOrdersPage({
   searchParams,
 }: {
-  searchParams?: {
+  searchParams: Promise<{
     page?: string;
     status?: string;
     search?: string;
-  };
+  }>;
 }) {
+  // Resolve the searchParams Promise
+  const resolvedSearchParams = await searchParams;
+  
   const supabase = await createClient();
   
   // Parse query parameters
-  const currentPage = searchParams?.page ? parseInt(searchParams.page) : 1;
-  const filter = searchParams?.status || '';
-  const searchQuery = searchParams?.search || '';
+  const currentPage = resolvedSearchParams?.page ? parseInt(resolvedSearchParams.page) : 1;
+  const filter = resolvedSearchParams?.status || '';
+  const searchQuery = resolvedSearchParams?.search || '';
   const itemsPerPage = 10;
   
   // Base query

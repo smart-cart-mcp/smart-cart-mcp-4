@@ -5,16 +5,19 @@ export const metadata = {
   description: 'Your checkout process was cancelled',
 };
 
-export default function CheckoutCancelPage({
+export default async function CheckoutCancelPage({
   searchParams,
 }: {
-  searchParams?: { session_id?: string };
+  searchParams: Promise<{ session_id?: string }>;
 }) {
+  // Resolve the searchParams Promise
+  const resolvedSearchParams = await searchParams;
+  
   return (
     <StripeErrorDisplay
       title="Checkout Cancelled"
       message="Your checkout process was cancelled. Your cart has been saved, and you can continue shopping or try checking out again."
-      supportContext={searchParams?.session_id ? `Session ID (Cancelled): ${searchParams.session_id}` : undefined}
+      supportContext={resolvedSearchParams?.session_id ? `Session ID (Cancelled): ${resolvedSearchParams.session_id}` : undefined}
     />
   );
 } 

@@ -238,7 +238,7 @@ export async function handleSuccessfulCheckoutSession(
   let orderId: number | undefined = undefined;
   try {
     // Insert order record
-    const { data: orderData, error: orderError } = await (await supabase)
+    const { data: orderData, error: orderError } = await supabase
       .from('orders')
       .insert({
         user_id: userId,
@@ -287,7 +287,7 @@ export async function handleSuccessfulCheckoutSession(
     }
 
     // Insert order items
-    const { error: orderItemsError } = await (await supabase)
+    const { error: orderItemsError } = await supabase
       .from('order_items')
       .insert(orderItemsToInsert);
 
@@ -308,7 +308,7 @@ export async function handleSuccessfulCheckoutSession(
     }
 
     // Log activity
-    await (await supabase).from('activity_logs').insert({ 
+    await supabase.from('activity_logs').insert({ 
       user_id: userId, 
       action: `Order ${orderId} placed via Stripe Checkout Session ${stripeSessionId}.` 
     });
@@ -321,7 +321,7 @@ export async function handleSuccessfulCheckoutSession(
   } catch (e: any) {
     console.error('Unexpected error finalizing order from session:', stripeSessionId, e);
     if (orderId) {
-      await (await supabase).from('orders').update({ status: 'Error - Processing Failed' }).eq('id', orderId);
+      await supabase.from('orders').update({ status: 'Error - Processing Failed' }).eq('id', orderId);
     }
     return { error: 'An unexpected server error occurred while finalizing your order. Please contact support.', internalError: e.message };
   }

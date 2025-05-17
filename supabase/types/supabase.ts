@@ -207,6 +207,10 @@ export interface Database {
           payment_status: string | null
           created_at: string
           updated_at: string
+          subtotal: number | null
+          shipping_handling_fee: number | null
+          stripe_checkout_session_id: string | null
+          tracking_number: string | null
         }
         Insert: {
           id?: number
@@ -218,6 +222,10 @@ export interface Database {
           payment_status?: string | null
           created_at?: string
           updated_at?: string
+          subtotal?: number | null
+          shipping_handling_fee?: number | null
+          stripe_checkout_session_id?: string | null
+          tracking_number?: string | null
         }
         Update: {
           id?: number
@@ -229,6 +237,10 @@ export interface Database {
           payment_status?: string | null
           created_at?: string
           updated_at?: string
+          subtotal?: number | null
+          shipping_handling_fee?: number | null
+          stripe_checkout_session_id?: string | null
+          tracking_number?: string | null
         }
         Relationships: [
           {

@@ -6,13 +6,14 @@ import { Product } from "@/lib/database.types";
 import AddToCartForm from "@/components/cart/AddToCartForm";
 
 interface ProductPageProps {
-  params: {
+  params: Promise<{
     productId: string;
-  };
+  }>;
 }
 
 export async function generateMetadata({ params }: ProductPageProps) {
-  const productId = parseInt(params.productId);
+  const resolvedParams = await params;
+  const productId = parseInt(resolvedParams.productId);
   const product = await getProductById(productId);
 
   if (!product) {
@@ -29,7 +30,8 @@ export async function generateMetadata({ params }: ProductPageProps) {
 }
 
 export default async function ProductPage({ params }: ProductPageProps) {
-  const productId = parseInt(params.productId);
+  const resolvedParams = await params;
+  const productId = parseInt(resolvedParams.productId);
   const product = await getProductById(productId);
 
   if (!product) {

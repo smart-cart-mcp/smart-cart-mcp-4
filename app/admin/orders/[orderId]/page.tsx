@@ -39,14 +39,16 @@ const STATUS_OPTIONS = [
   'Refunded'
 ];
 
-export default function AdminOrderDetailPage({ 
+export default async function AdminOrderDetailPage({ 
   params 
 }: { 
-  params: { orderId: string } 
+  params: Promise<{ orderId: string }> 
 }) {
+  // Resolve the params Promise
+  const resolvedParams = await params;
   const router = useRouter();
   const supabase = createClient();
-  const orderId = parseInt(params.orderId, 10);
+  const orderId = parseInt(resolvedParams.orderId, 10);
   
   const [order, setOrder] = useState<OrderWithTracking | null>(null);
   const [orderItems, setOrderItems] = useState<any[]>([]);

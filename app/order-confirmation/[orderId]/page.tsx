@@ -45,8 +45,10 @@ async function getOrderDetails(orderId: number, userId: string) {
 export default async function OrderConfirmationPage({
   params,
 }: {
-  params: { orderId: string };
+  params: Promise<{ orderId: string }>;
 }) {
+  const resolvedParams = await params;
+  
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -54,7 +56,7 @@ export default async function OrderConfirmationPage({
     redirect('/sign-in?message=Please sign in to view your order.');
   }
 
-  const orderId = parseInt(params.orderId);
+  const orderId = parseInt(resolvedParams.orderId);
   if (isNaN(orderId)) {
     redirect('/'); // Invalid order ID
   }

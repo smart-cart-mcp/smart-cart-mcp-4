@@ -4,13 +4,14 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 interface CategoryPageProps {
-  params: {
+  params: Promise<{
     categoryId: string;
-  };
+  }>;
 }
 
 export async function generateMetadata({ params }: CategoryPageProps) {
-  const categoryId = parseInt(params.categoryId);
+  const resolvedParams = await params;
+  const categoryId = parseInt(resolvedParams.categoryId);
   const category = await getCategoryById(categoryId);
 
   if (!category) {
@@ -27,7 +28,8 @@ export async function generateMetadata({ params }: CategoryPageProps) {
 }
 
 export default async function CategoryPage({ params }: CategoryPageProps) {
-  const categoryId = parseInt(params.categoryId);
+  const resolvedParams = await params;
+  const categoryId = parseInt(resolvedParams.categoryId);
   const category = await getCategoryById(categoryId);
 
   if (!category) {

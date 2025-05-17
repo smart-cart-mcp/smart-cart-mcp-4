@@ -12,10 +12,13 @@ export const metadata = {
 export default async function OrderDetailPage({ 
   params 
 }: { 
-  params: { orderId: string } 
+  params: Promise<{ orderId: string }> 
 }) {
+  // Resolve the params Promise
+  const resolvedParams = await params;
+  
   // Parse the order ID from the URL
-  const orderId = parseInt(params.orderId, 10);
+  const orderId = parseInt(resolvedParams.orderId, 10);
   
   // Handle invalid order ID
   if (isNaN(orderId)) {

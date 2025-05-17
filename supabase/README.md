@@ -1,6 +1,6 @@
 # Supabase Database Setup
 
-This directory contains the database schema and migrations for the Smart Cart application.
+This directory contains the database schema and migrations for the Smart Cart application using a remote Supabase instance.
 
 ## Directory Structure
 
@@ -8,28 +8,54 @@ This directory contains the database schema and migrations for the Smart Cart ap
 - `/seed`: Contains seed data to populate the database with initial data
 - `/types`: Contains TypeScript type definitions generated from the database schema
 
-## Working with the Database
+## Working with the Cloud Supabase Database
 
-### Starting the Local Supabase Instance
+### Setup Supabase CLI for Remote Access
+
+1. Install the Supabase CLI if you haven't already:
+   ```bash
+   npm install --save-dev supabase
+   ```
+
+2. Login to Supabase:
+   ```bash
+   npx supabase login
+   ```
+
+3. Link your local project to your remote Supabase project:
+   ```bash
+   npx supabase link --project-ref your-project-ref
+   ```
+   Replace `your-project-ref` with your Supabase project reference ID. You can find this in your Supabase dashboard URL: `https://app.supabase.com/project/your-project-ref`.
+
+### Apply Migrations to Remote Database
+
+To push your local migrations to the remote Supabase database:
 
 ```bash
-npm run supabase:start
+npm run supabase:push
 ```
 
-### Generate TypeScript Types
+### Generate TypeScript Types from Remote Schema
 
-After making changes to the database schema, generate updated TypeScript types:
+You'll need to modify the package.json script with your actual project ID:
+
+```bash
+"supabase:types": "supabase gen types typescript --project-id your-project-id > supabase/types/supabase.ts"
+```
+
+Then run:
 
 ```bash
 npm run supabase:types
 ```
 
-### Reset the Database
+### Pull Remote Database Changes
 
-To reset the database to a clean state and apply all migrations:
+If you've made changes to the database schema through the Supabase dashboard UI, pull those changes to update your local migrations:
 
 ```bash
-npm run db:reset
+npm run supabase:pull
 ```
 
 ### Database Schema
@@ -65,17 +91,10 @@ The schema includes indices on foreign keys to optimize query performance:
 - `idx_orders_user`
 - `idx_order_items_order`
 
-### Running Migrations
+### Creating New Migrations
 
 To create a new migration:
 
-1. Create a new SQL file in the `migrations` directory with a timestamp prefix
+1. Create a new SQL file in the `migrations` directory with a timestamp prefix (e.g., `20240517000000_add_new_field.sql`)
 2. Add your SQL commands to the file
-3. Run `supabase db reset` to apply the migration
-
-### Connecting to Hosted Supabase
-
-To connect to your hosted Supabase instance:
-
-1. Set the `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` environment variables
-2. Push migrations to production using `supabase db push` 
+3. Push the migration to your remote database with `npm run supabase:push` 

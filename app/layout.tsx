@@ -1,5 +1,5 @@
 import { GeistSans } from "geist/font/sans";
-import { ThemeProvider } from "@/components/theme-provider";
+import { ThemeProvider } from "../components/theme-provider";
 import { Toaster } from "sonner";
 import "./globals.css";
 import Footer from "@/components/Footer";

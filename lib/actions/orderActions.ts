@@ -4,6 +4,7 @@ import Stripe from 'stripe';
 import { createClient } from '@/utils/supabase/server';
 import { CartItemWithProduct } from './cartActions';
 import { revalidatePath } from 'next/cache';
+import { Database } from '@/supabase/types/supabase';
 
 // Define shipping address type
 export type ShippingAddress = {
@@ -40,6 +41,7 @@ export type OrderDetail = {
   created_at: string;
   updated_at: string;
   stripe_checkout_session_id: string | null;
+  tracking_number?: string | null;
   order_items: {
     id: number;
     order_id: number;
@@ -58,7 +60,7 @@ export type OrderDetail = {
 
 // Initialize Stripe with secret key
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2022-11-15', // Use an apiVersion that's compatible with the installed Stripe package
+  apiVersion: '2025-04-30.basil', // Updated to compatible apiVersion
   typescript: true,
 });
 
@@ -115,8 +117,8 @@ export async function createStripeCheckoutSession(
       country: shippingAddress.country, // Must be a 2-letter ISO country code
     };
 
-    // Create checkout session
-    const session = await stripe.checkout.sessions.create({
+    // Create checkout session with properly typed params
+    const params: Stripe.Checkout.SessionCreateParams = {
       payment_method_types: ['card'],
       line_items,
       mode: 'payment',
@@ -126,10 +128,6 @@ export async function createStripeCheckoutSession(
       shipping_address_collection: {
         allowed_countries: ['US', 'CA'], // Specify countries you ship to
       },
-      shipping_details: {
-        name: shippingAddress.fullName,
-        address: stripeShippingAddress
-      },
       metadata: {
         userId: userId,
         app_shipping_address_line1: shippingAddress.addressLine1,
@@ -137,10 +135,17 @@ export async function createStripeCheckoutSession(
         app_shipping_state: shippingAddress.stateOrProvince,
         app_shipping_postal_code: shippingAddress.postalCode,
         app_shipping_country: shippingAddress.country,
+        app_shipping_name: shippingAddress.fullName,
       },
-    });
+    };
 
-    return { sessionId: session.id, sessionUrl: session.url, error: undefined };
+    const session = await stripe.checkout.sessions.create(params);
+
+    return { 
+      sessionId: session.id, 
+      sessionUrl: session.url || undefined,
+      error: undefined 
+    };
   } catch (e: any) {
     console.error('Error creating Stripe Checkout Session:', e.message);
     return { error: `Stripe session creation failed: ${e.message}` };
@@ -152,7 +157,7 @@ export async function handleSuccessfulCheckoutSession(
   stripeSessionId: string,
   userId: string
 ): Promise<{ orderId?: number; error?: string; internalError?: string }> {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   // Check if an order with this Stripe Session ID already exists
   const { data: existingOrder, error: checkError } = await supabase
@@ -194,22 +199,22 @@ export async function handleSuccessfulCheckoutSession(
     return { error: 'User authentication mismatch during order processing. Please contact support.' };
   }
 
-  // Extract shipping details from Stripe session
-  const stripeShippingDetails = session.shipping_details;
-  if (!stripeShippingDetails || !stripeShippingDetails.address || !stripeShippingDetails.name) {
+  // Extract shipping details from metadata or Stripe session
+  let finalShippingAddress: ShippingAddress;
+  
+  // Get shipping details from metadata
+  if (session.metadata) {
+    finalShippingAddress = {
+      fullName: session.metadata.app_shipping_name || '',
+      addressLine1: session.metadata.app_shipping_address_line1 || '',
+      city: session.metadata.app_shipping_city || '',
+      stateOrProvince: session.metadata.app_shipping_state || '',
+      postalCode: session.metadata.app_shipping_postal_code || '',
+      country: session.metadata.app_shipping_country || '',
+    };
+  } else {
     return { error: 'Shipping details are missing from the completed Stripe session. Please contact support.' };
   }
-  
-  // Format shipping address from Stripe
-  const finalShippingAddress: ShippingAddress = {
-    fullName: stripeShippingDetails.name,
-    addressLine1: stripeShippingDetails.address.line1 || '',
-    addressLine2: stripeShippingDetails.address.line2 || undefined,
-    city: stripeShippingDetails.address.city || '',
-    stateOrProvince: stripeShippingDetails.address.state || '',
-    postalCode: stripeShippingDetails.address.postal_code || '',
-    country: stripeShippingDetails.address.country || '',
-  };
 
   // Calculate totals and shipping fee
   const subtotalFromStripe = (session.amount_subtotal || 0) / 100;
@@ -230,10 +235,10 @@ export async function handleSuccessfulCheckoutSession(
   const actualProductSubtotal = totalFromStripe - appShippingFee;
 
   // Create order in Supabase
-  let orderId: number | null = null;
+  let orderId: number | undefined = undefined;
   try {
     // Insert order record
-    const { data: orderData, error: orderError } = await supabase
+    const { data: orderData, error: orderError } = await (await supabase)
       .from('orders')
       .insert({
         user_id: userId,
@@ -278,18 +283,18 @@ export async function handleSuccessfulCheckoutSession(
     if (orderItemsToInsert.length === 0 && session.line_items?.data.some(li => (li.price?.product as Stripe.Product)?.name !== 'Shipping & Handling Fee')) {
       console.error(`No valid product items to insert for order ${orderId} from session ${stripeSessionId}.`);
       await supabase.from('orders').update({ status: 'Error - Items Missing (Mapping)' }).eq('id', orderId);
-      return { orderId: orderId, error: 'Order placed, but product details could not be fully recorded. We will review your order.', internalError: 'No product items mapped from Stripe session.' };
+      return { orderId, error: 'Order placed, but product details could not be fully recorded. We will review your order.', internalError: 'No product items mapped from Stripe session.' };
     }
 
     // Insert order items
-    const { error: orderItemsError } = await supabase
+    const { error: orderItemsError } = await (await supabase)
       .from('order_items')
       .insert(orderItemsToInsert);
 
     if (orderItemsError) {
       console.error('DB error creating order items for order:', orderId, orderItemsError);
       await supabase.from('orders').update({ status: 'Error - Items Missing' }).eq('id', orderId);
-      return { orderId: orderId, error: 'Order placed, but item details incomplete. We will review your order.', internalError: orderItemsError.message };
+      return { orderId, error: 'Order placed, but item details incomplete. We will review your order.', internalError: orderItemsError.message };
     }
 
     // Clear cart
@@ -303,7 +308,7 @@ export async function handleSuccessfulCheckoutSession(
     }
 
     // Log activity
-    await supabase.from('activity_logs').insert({ 
+    await (await supabase).from('activity_logs').insert({ 
       user_id: userId, 
       action: `Order ${orderId} placed via Stripe Checkout Session ${stripeSessionId}.` 
     });
@@ -312,11 +317,11 @@ export async function handleSuccessfulCheckoutSession(
     revalidatePath('/cart');
     revalidatePath('/');
 
-    return { orderId: orderId };
+    return { orderId };
   } catch (e: any) {
     console.error('Unexpected error finalizing order from session:', stripeSessionId, e);
     if (orderId) {
-      await supabase.from('orders').update({ status: 'Error - Processing Failed' }).eq('id', orderId);
+      await (await supabase).from('orders').update({ status: 'Error - Processing Failed' }).eq('id', orderId);
     }
     return { error: 'An unexpected server error occurred while finalizing your order. Please contact support.', internalError: e.message };
   }
@@ -407,11 +412,46 @@ export async function getOrderDetailsForUser(
       return { order: null, error: 'Order not found or access denied' };
     }
 
+    // Use type assertion to work with the data
+    const dbData = data as unknown as {
+      id: number;
+      user_id: string;
+      status: string;
+      total_amount: number;
+      shipping_address: string | null;
+      payment_method: string | null;
+      payment_status: string | null;
+      created_at: string;
+      updated_at: string;
+      subtotal?: number;
+      shipping_handling_fee?: number;
+      stripe_checkout_session_id?: string | null;
+      tracking_number?: string | null;
+      order_items: any[];
+    };
+
+    // Construct order detail with correct fields and defaults for missing ones
+    const parsedOrder: OrderDetail = {
+      id: dbData.id,
+      user_id: dbData.user_id,
+      status: dbData.status,
+      total_amount: dbData.total_amount,
+      subtotal: typeof dbData.subtotal === 'number' ? dbData.subtotal : 0,
+      shipping_handling_fee: typeof dbData.shipping_handling_fee === 'number' ? dbData.shipping_handling_fee : 0,
+      shipping_address: dbData.shipping_address || '',
+      payment_method: dbData.payment_method,
+      payment_status: dbData.payment_status,
+      created_at: dbData.created_at,
+      updated_at: dbData.updated_at,
+      stripe_checkout_session_id: dbData.stripe_checkout_session_id || null,
+      tracking_number: dbData.tracking_number || null,
+      order_items: dbData.order_items || []
+    };
+
     // Parse shipping address if it's stored as JSON string
-    let parsedOrder = data as OrderDetail;
-    if (typeof data.shipping_address === 'string') {
+    if (typeof dbData.shipping_address === 'string') {
       try {
-        parsedOrder.parsed_shipping_address = JSON.parse(data.shipping_address) as ShippingAddress;
+        parsedOrder.parsed_shipping_address = JSON.parse(dbData.shipping_address) as ShippingAddress;
       } catch (e) {
         console.error('Failed to parse shipping_address JSON for order', orderId, e);
       }

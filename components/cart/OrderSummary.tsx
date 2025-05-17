@@ -16,8 +16,14 @@ export default function OrderSummary({ cartItems, cartTotal }: OrderSummaryProps
     }).format(amount);
   };
 
+  // Calculate shipping fee
+  const shippingHandlingFee = cartTotal * 0.2; // 20% of subtotal
+
   // Total items count (sum of quantities)
   const totalItems = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+
+  // Grand total
+  const grandTotal = cartTotal + shippingHandlingFee;
 
   return (
     <div className="bg-card rounded-lg shadow-sm border p-6 sticky top-6">
@@ -29,20 +35,15 @@ export default function OrderSummary({ cartItems, cartTotal }: OrderSummaryProps
           <span>{formatCurrency(cartTotal)}</span>
         </div>
         
-        <div className="flex justify-between text-muted-foreground">
-          <span>Shipping:</span>
-          <span>Calculated at checkout</span>
-        </div>
-        
-        <div className="flex justify-between text-muted-foreground">
-          <span>Taxes:</span>
-          <span>Calculated at checkout</span>
+        <div className="flex justify-between">
+          <span>Shipping & Handling (20%):</span>
+          <span>{formatCurrency(shippingHandlingFee)}</span>
         </div>
         
         <div className="border-t pt-4 mt-4">
           <div className="flex justify-between font-semibold text-lg">
             <span>Total:</span>
-            <span>{formatCurrency(cartTotal)}</span>
+            <span>{formatCurrency(grandTotal)}</span>
           </div>
         </div>
         

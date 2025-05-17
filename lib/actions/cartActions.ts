@@ -16,6 +16,17 @@ export type CartItemDetail = {
   product: Product & { categoryName?: string | null };
 };
 
+// Define cart item type with full product details for Stripe
+export type CartItemWithProduct = {
+  id: number;
+  user_id: string;
+  product_id: number;
+  quantity: number;
+  added_at: string;
+  updated_at: string;
+  products: Product & { categoryName?: string | null };
+};
+
 // Add a product to cart
 export async function addToCart(
   productId: number,
@@ -143,6 +154,55 @@ export async function getCartItems(): Promise<CartItemDetail[]> {
   } catch (error) {
     console.error("Get cart items error:", error);
     return [];
+  }
+}
+
+// Get cart items with product details for a specific user
+export async function getCartItemsWithProductDetails(userId: string): Promise<{ 
+  data?: CartItemWithProduct[]; 
+  error?: string 
+}> {
+  try {
+    const supabase = await createClient();
+    
+    if (!userId) {
+      return { error: "User ID is required" };
+    }
+
+    const { data, error } = await supabase
+      .from("cart_items")
+      .select(`
+        *,
+        products:products (
+          *,
+          categories (name)
+        )
+      `)
+      .eq("user_id", userId)
+      .order("added_at", { ascending: false });
+
+    if (error) {
+      console.error("Error fetching cart items with products:", error);
+      return { error: "Failed to fetch cart items" };
+    }
+
+    if (!data || data.length === 0) {
+      return { data: [] };
+    }
+
+    // Transform the data to include categoryName at the product level
+    const transformedData = data.map((item: any) => ({
+      ...item,
+      products: {
+        ...item.products,
+        categoryName: item.products.categories?.name
+      }
+    }));
+
+    return { data: transformedData };
+  } catch (error) {
+    console.error("Get cart items with products error:", error);
+    return { error: "An unexpected error occurred" };
   }
 }
 

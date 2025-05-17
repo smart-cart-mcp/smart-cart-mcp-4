@@ -1,6 +1,8 @@
-# Supabase Database Setup
+# Smart Cart Database Schema
 
-This directory contains the database schema and migrations for the Smart Cart application using a remote Supabase instance.
+This directory contains the database schema and migrations for the Smart Cart application using your Supabase cloud instance (`iktywzahfhafyupvxhzv`).
+
+> **Note**: For step-by-step setup instructions, see [SUPABASE_SETUP.md](../SUPABASE_SETUP.md) in the root directory.
 
 ## Directory Structure
 
@@ -8,57 +10,23 @@ This directory contains the database schema and migrations for the Smart Cart ap
 - `/seed`: Contains seed data to populate the database with initial data
 - `/types`: Contains TypeScript type definitions generated from the database schema
 
-## Working with the Cloud Supabase Database
-
-### Setup Supabase CLI for Remote Access
-
-1. Install the Supabase CLI if you haven't already:
-   ```bash
-   npm install --save-dev supabase
-   ```
-
-2. Login to Supabase:
-   ```bash
-   npx supabase login
-   ```
-
-3. Link your local project to your remote Supabase project:
-   ```bash
-   npx supabase link --project-ref your-project-ref
-   ```
-   Replace `your-project-ref` with your Supabase project reference ID. You can find this in your Supabase dashboard URL: `https://app.supabase.com/project/your-project-ref`.
-
-### Apply Migrations to Remote Database
-
-To push your local migrations to the remote Supabase database:
+## Quick Commands
 
 ```bash
+# Link to your project
+npm run supabase:link
+
+# Push migrations to your Supabase cloud
 npm run supabase:push
-```
 
-### Generate TypeScript Types from Remote Schema
-
-You'll need to modify the package.json script with your actual project ID:
-
-```bash
-"supabase:types": "supabase gen types typescript --project-id your-project-id > supabase/types/supabase.ts"
-```
-
-Then run:
-
-```bash
+# Generate TypeScript types
 npm run supabase:types
+
+# Seed the database
+npm run supabase:seed
 ```
 
-### Pull Remote Database Changes
-
-If you've made changes to the database schema through the Supabase dashboard UI, pull those changes to update your local migrations:
-
-```bash
-npm run supabase:pull
-```
-
-### Database Schema
+## Database Schema
 
 The database schema includes:
 
@@ -72,7 +40,7 @@ The database schema includes:
 
 Each table has Row Level Security (RLS) policies to ensure data security.
 
-### Database Relationships
+## Database Relationships
 
 - Products belong to Categories
 - Reviews belong to Products and Users
@@ -81,7 +49,7 @@ Each table has Row Level Security (RLS) policies to ensure data security.
 - Order Items belong to Orders and Products
 - Activity Logs track User actions
 
-### Performance Optimizations
+## Performance Optimizations
 
 The schema includes indices on foreign keys to optimize query performance:
 
@@ -91,7 +59,7 @@ The schema includes indices on foreign keys to optimize query performance:
 - `idx_orders_user`
 - `idx_order_items_order`
 
-### Creating New Migrations
+## Creating New Migrations
 
 To create a new migration:
 

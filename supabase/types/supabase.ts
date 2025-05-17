@@ -141,8 +141,12 @@ export type Database = {
           payment_method: string | null
           payment_status: string | null
           shipping_address: string | null
+          shipping_handling_fee: number | null
           status: string
+          stripe_checkout_session_id: string | null
+          subtotal: number | null
           total_amount: number
+          tracking_number: string | null
           updated_at: string
           user_id: string
         }
@@ -152,8 +156,12 @@ export type Database = {
           payment_method?: string | null
           payment_status?: string | null
           shipping_address?: string | null
+          shipping_handling_fee?: number | null
           status?: string
+          stripe_checkout_session_id?: string | null
+          subtotal?: number | null
           total_amount: number
+          tracking_number?: string | null
           updated_at?: string
           user_id: string
         }
@@ -163,8 +171,12 @@ export type Database = {
           payment_method?: string | null
           payment_status?: string | null
           shipping_address?: string | null
+          shipping_handling_fee?: number | null
           status?: string
+          stripe_checkout_session_id?: string | null
+          subtotal?: number | null
           total_amount?: number
+          tracking_number?: string | null
           updated_at?: string
           user_id?: string
         }

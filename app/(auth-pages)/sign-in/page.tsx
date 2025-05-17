@@ -8,7 +8,7 @@ import Link from "next/link";
 export default async function Login(props: { searchParams: Promise<Message> }) {
   const searchParams = await props.searchParams;
   return (
-    <form className="flex-1 flex flex-col min-w-64">
+    <form className="w-full">
       <h1 className="text-2xl font-bold mb-2">Welcome Back to Smart Cart</h1>
       <p className="text-sm text-muted-foreground mb-6">
         Sign in to your account to continue your shopping experience

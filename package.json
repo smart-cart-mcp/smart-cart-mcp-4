@@ -4,10 +4,10 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "supabase:link": "supabase link --project-ref iktywzahfhafyupvxhzv",
+    "supabase:link": "supabase link --project-ref yowkzbaqbcegscktahau",
     "supabase:pull": "supabase db pull",
     "supabase:push": "supabase db push",
-    "supabase:types": "supabase gen types typescript --project-id iktywzahfhafyupvxhzv > supabase/types/supabase.ts",
+    "supabase:types": "supabase gen types typescript --project-id yowkzbaqbcegscktahau > supabase/types/supabase.ts",
     "supabase:seed": "supabase db execute < supabase/seed/seed.sql",
     "db:reset": "supabase db reset"
   },

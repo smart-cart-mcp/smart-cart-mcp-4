@@ -26,63 +26,37 @@ function getFormField(formData: FormData, fieldName: string): string | undefined
 }
 
 export const signUpAction = async (formData: FormData) => {
-  console.log("Starting signUp process");
-  
-  try {
-    const email = getFormField(formData, "email");
-    const password = getFormField(formData, "password");
-    console.log(`Email provided: ${email ? "YES" : "NO"}, Password provided: ${password ? "YES" : "NO"}`);
-    
-    const supabase = await createClient();
-    const origin = (await headers()).get("origin");
-    console.log(`Origin URL: ${origin}`);
+  const email = getFormField(formData, "email");
+  const password = getFormField(formData, "password");
+  const supabase = await createClient();
+  const origin = (await headers()).get("origin");
 
-    if (!email || !password) {
-      console.log("Missing credentials");
-      return encodedRedirect(
-        "error",
-        "/sign-up",
-        "Email and password are required",
-      );
-    }
+  if (!email || !password) {
+    return encodedRedirect(
+      "error",
+      "/sign-up",
+      "Email and password are required",
+    );
+  }
 
-    console.log(`Attempting to sign up with email: ${email} and redirect to: ${origin}/auth/callback`);
-    const signUpResult = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: `${origin}/auth/callback`,
-      },
-    });
-    
-    console.log("Sign up response:", JSON.stringify(signUpResult, null, 2));
+  const { error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: {
+      emailRedirectTo: `${origin}/auth/callback`,
+    },
+  });
 
-    if (signUpResult.error) {
-      console.error("Signup error details:", {
-        code: signUpResult.error.code,
-        message: signUpResult.error.message,
-        stack: signUpResult.error.stack
-      });
-      
-      // In case of "Error sending confirmation email", which indicates a Supabase email configuration issue
-      if (signUpResult.error.message === "Error sending confirmation email") {
-        console.error("SUPABASE EMAIL CONFIG ISSUE: The email service in Supabase may not be properly configured.");
-        return encodedRedirect("error", "/sign-up", 
-          "Account created, but we couldn't send a verification email. Please contact support.");
-      }
-      
-      return encodedRedirect("error", "/sign-up", signUpResult.error.message);
-    } else {
-      console.log("Signup successful, user data:", JSON.stringify(signUpResult.data, null, 2));
-      return encodedRedirect(
-        "success",
-        "/sign-up",
-        "Thanks for signing up! Please check your email for a verification link.",
-      );
-    }
-  } catch (err) {
-    console.error("Unexpected error during signup:", err);
-    return encodedRedirect("error", "/sign-up", "An unexpected error occurred. Please try again.");
+  if (error) {
+    console.error(error.code + " " + error.message);
+    return encodedRedirect("error", "/sign-up", error.message);
+  } else {
+    // Redirect to sign-in page with success message after successful signup
+    return encodedRedirect(
+      "success",
+      "/sign-in",
+      "Thanks for signing up! You can now sign in with your credentials.",
+    );
   }
 };
 
